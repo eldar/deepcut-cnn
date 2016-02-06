@@ -227,6 +227,7 @@ message SolverParameter {
 
   // If false, don't save a snapshot after training finishes.
   optional bool snapshot_after_train = 28 [default = true];
+  repeated float multistep_lr = 50;
 
   // DEPRECATED: old solver enum types, use string instead
   enum SolverType {
