@@ -394,6 +394,8 @@ message LayerParameter {
   optional ThresholdParameter threshold_param = 128;
   optional TileParameter tile_param = 138;
   optional WindowDataParameter window_data_param = 129;
+  optional PoseDataParameter pose_data_param = 200;
+  optional SoftmaxWithLossVecParameter softmax_with_loss_vec_param = 201;
 }
 
 // Message that stores parameters used to apply transformation
@@ -444,6 +446,12 @@ message LossParameter {
   // is not specified, then setting this to false will be equivalent to
   // normalization = BATCH_SIZE to be consistent with previous behavior.
   optional bool normalize = 2;
+}
+
+message SoftmaxWithLossVecParameter {
+  optional bool no_softmax = 1 [default = false];
+  optional bool smooth_L1 = 2 [default = false];
+  optional bool cross_entropy = 3 [default = false];
 }
 
 // Messages that store parameters used by individual layer types follow, in
@@ -1120,6 +1128,42 @@ message WindowDataParameter {
   optional bool cache_images = 12 [default = false];
   // append root_folder to locate images
   optional string root_folder = 13 [default = ""];
+}
+
+message PoseDataParameter {
+  // Specify the data source.
+  optional string source = 1;
+  // For data pre-processing, we can do simple scaling and subtracting the
+  // data mean, if provided. Note that the mean subtraction is always carried
+  // out before scaling.
+  optional float scale = 2 [default = 1];
+  // Specify the batch size.
+  optional uint32 batch_size = 4;
+  // Specify if we would like to randomly crop an image.
+  optional uint32 crop_size = 5 [default = 0];
+  // Specify if we want to randomly mirror data.
+  optional bool mirror = 6 [default = false];
+  // Foreground (object) overlap threshold
+  optional float fg_threshold = 7 [default = 17];
+  // Background (non-object) overlap threshold
+  optional float bg_threshold = 8 [default = 17];
+  // Fraction of batch that should be foreground objects
+  optional float fg_fraction = 9 [default = 0.25];
+  // cache_images: will load all images in memory for faster access
+  optional bool cache_images = 12 [default = false];
+  // append root_folder to locate images
+  optional string root_folder = 13 [default = ""];
+  optional int32 ignore_label = 14;
+  optional bool sequential = 15 [default = false];
+  optional int32 input_width = 16 [default = 600];
+  optional int32 input_height = 17 [default = 800];
+  optional bool soft_labels = 18 [default = false];
+  optional bool no_bg_class = 19 [default = false];
+  optional float scale_jitter_up = 20 [default = 1.1];
+  optional float scale_jitter_lo = 21 [default = 0.9];
+  optional float gauss_blob_sigma = 22 [default = 10];
+  optional bool multi_label = 23 [default = false];
+  optional int32 num_classes = 24 [default = 14];
 }
 
 message SPPParameter {
