@@ -137,6 +137,7 @@ message SolverParameter {
 
   // The number of iterations for each test net.
   repeated int32 test_iter = 3;
+  repeated float multistep_lr = 41;
 
   // The number of iterations between two testing phases.
   optional int32 test_interval = 4 [default = 0];
@@ -227,7 +228,6 @@ message SolverParameter {
 
   // If false, don't save a snapshot after training finishes.
   optional bool snapshot_after_train = 28 [default = true];
-  repeated float multistep_lr = 50;
 
   // DEPRECATED: old solver enum types, use string instead
   enum SolverType {
