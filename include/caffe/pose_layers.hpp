@@ -139,7 +139,7 @@ class SoftmaxWithLossVecLayer : public LossLayer<Dtype> {
   int softmax_axis_, outer_num_, inner_num_;
 };
 
-/*
+
 template <typename Dtype>
 class SmoothL1LossLayer : public LossLayer<Dtype> {
  public:
@@ -178,7 +178,7 @@ class SmoothL1LossLayer : public LossLayer<Dtype> {
   bool has_weights_;
   int sample_count_;
 };
-*/
+
 
 /**
  * @brief A helper for image operations that rearranges image regions into
