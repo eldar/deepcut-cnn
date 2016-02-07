@@ -14,7 +14,7 @@ namespace caffe {
 template <typename Dtype>
 class MultiBatch {
  public:
-  static const int MAX_LABELS = 6;
+  static const int MAX_LABELS = 7;
   Blob<Dtype> data_;
   Blob<Dtype> labels_[MAX_LABELS];
 };

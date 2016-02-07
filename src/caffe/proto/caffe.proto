@@ -1167,6 +1167,7 @@ message PoseDataParameter {
   optional int32 num_classes = 24 [default = 14];
   optional bool location_refinement = 25 [default = false];
   optional bool regress_to_other = 26 [default = false];
+  optional bool rpn = 27 [default = false];
 }
 
 message SPPParameter {
