@@ -379,12 +379,36 @@ void PoseDataLayer<Dtype>::load_batch(MultiBatch<Dtype>* batch) {
   const int half_stride = 4;
 
   bool use_fg_fraction = this->layer_param_.pose_data_param().has_fg_fraction();
+
+  bool locref = this->layer_param_.pose_data_param().location_refinement();
+  bool allreg = this->layer_param_.pose_data_param().regress_to_other();
+
   UniformGenerator *real_gen = (UniformGenerator*)uniform_real_gen;
 
   SimpleMatrix *regr_edges = neighbour_stats_[0];
   SimpleMatrix *regr_means = neighbour_stats_[1];
   SimpleMatrix *regr_std_devs = neighbour_stats_[2];
 
+  int idx_cls = 0;
+  int idx_locref_targets = 0;
+  int idx_locref_weights = 0;
+  int idx_allreg_targets = 0;
+  int idx_allreg_weights = 0;
+  int label_idx = 0;
+  idx_cls = label_idx;
+  label_idx += 1;
+  if(locref)
+  {
+    idx_locref_targets = label_idx;
+    idx_locref_weights = label_idx + 1;
+    label_idx += 2;
+  }
+  if(allreg)
+  {
+    idx_allreg_targets = label_idx;
+    idx_allreg_weights = label_idx + 1;
+    label_idx += 2;
+  }
   /*
   for(int k = 0; k < starts.size(); ++k)
       LOG(WARNING) << starts[k] << " " << ends[k];
@@ -453,45 +477,47 @@ void PoseDataLayer<Dtype>::load_batch(MultiBatch<Dtype>* batch) {
     CHECK_EQ(num_regr_targets, 182);
     int num_next_channels = num_regr_targets * 2;
 
+    Blob<Dtype> *labels = batch->labels_;
+
     batch->data_.Reshape(batch_size, image_size[0], input_height, input_width);
-    batch->labels_[0].Reshape(batch_size, label_channels, sc_map_height, sc_map_width);
-    if(num_labels >= 3) {
-        batch->labels_[1].Reshape(batch_size, num_locs, sc_map_height, sc_map_width);
-        batch->labels_[2].Reshape(batch_size, num_locs, sc_map_height, sc_map_width);
+    labels[idx_cls].Reshape(batch_size, label_channels, sc_map_height, sc_map_width);
+    if(locref) {
+        labels[idx_locref_targets].Reshape(batch_size, num_locs, sc_map_height, sc_map_width);
+        labels[idx_locref_weights].Reshape(batch_size, num_locs, sc_map_height, sc_map_width);
     }
-    if(num_labels >= 5) {
-        batch->labels_[3].Reshape(batch_size, num_next_channels, sc_map_height, sc_map_width);
-        batch->labels_[4].Reshape(batch_size, num_next_channels, sc_map_height, sc_map_width);
+    if(allreg) {
+        labels[idx_allreg_targets].Reshape(batch_size, num_next_channels, sc_map_height, sc_map_width);
+        labels[idx_allreg_weights].Reshape(batch_size, num_next_channels, sc_map_height, sc_map_width);
     }
     this->min_distance_.Reshape(batch_size, 1, sc_map_height, sc_map_width);
     this->sample_mask_.Reshape(batch_size, 1, sc_map_height, sc_map_width);
 
     Dtype* top_data = batch->data_.mutable_cpu_data();
-    Dtype* top_label = batch->labels_[0].mutable_cpu_data();
+    Dtype* top_label = labels[idx_cls].mutable_cpu_data();
     Dtype* top_loc_label = 0;
     Dtype* top_loc_weights = 0;
-    if(num_labels >= 3) {
-        top_loc_label = batch->labels_[1].mutable_cpu_data();
-        top_loc_weights = batch->labels_[2].mutable_cpu_data();
+    if(locref) {
+        top_loc_label = labels[idx_locref_targets].mutable_cpu_data();
+        top_loc_weights = labels[idx_locref_weights].mutable_cpu_data();
     }
     Dtype* top_next_label = 0;
     Dtype* top_next_weights = 0;
-    if(num_labels >= 5) {
-        top_next_label = batch->labels_[3].mutable_cpu_data();
-        top_next_weights = batch->labels_[4].mutable_cpu_data();
+    if(allreg) {
+        top_next_label = labels[idx_allreg_targets].mutable_cpu_data();
+        top_next_weights = labels[idx_allreg_weights].mutable_cpu_data();
     }
     Dtype* min_distance_data = this->min_distance_.mutable_cpu_data();
     Dtype* sample_mask_data = this->sample_mask_.mutable_cpu_data();
     // zero out batch
     caffe_set(batch->data_.count(), Dtype(0), top_data);
-    caffe_set(batch->labels_[0].count(), Dtype(ignore_value), top_label);
-    if(num_labels >= 3) {
-        caffe_set(batch->labels_[1].count(), Dtype(0), top_loc_label);
-        caffe_set(batch->labels_[2].count(), Dtype(0), top_loc_weights);
+    caffe_set(labels[idx_cls].count(), Dtype(ignore_value), top_label);
+    if(locref) {
+        caffe_set(labels[idx_locref_targets].count(), Dtype(0), top_loc_label);
+        caffe_set(labels[idx_locref_weights].count(), Dtype(0), top_loc_weights);
     }
-    if(num_labels >= 5) {
-        caffe_set(batch->labels_[3].count(), Dtype(0), top_next_label);
-        caffe_set(batch->labels_[4].count(), Dtype(0), top_next_weights);
+    if(allreg) {
+        caffe_set(labels[idx_allreg_targets].count(), Dtype(0), top_next_label);
+        caffe_set(labels[idx_allreg_weights].count(), Dtype(0), top_next_weights);
     }
     caffe_set(this->sample_mask_.count(), Dtype(0), sample_mask_data);
     
@@ -637,7 +663,7 @@ void PoseDataLayer<Dtype>::load_batch(MultiBatch<Dtype>* batch) {
                 * sc_map_width + i;
             top_label[top_index] = scores[cls];
         }
-        if(is_foreground && num_labels >= 3)
+        if(is_foreground && locref)
         {
             for(int cls = 1; cls <= num_classes; ++cls)
             {
@@ -654,7 +680,7 @@ void PoseDataLayer<Dtype>::load_batch(MultiBatch<Dtype>* batch) {
                 }
             }
         }
-        if(is_foreground && num_labels >= 5)
+        if(is_foreground && allreg)
         {
             for(int l = 0; l < num_regr_targets; ++l)
             {

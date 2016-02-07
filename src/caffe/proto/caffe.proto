@@ -1165,6 +1165,8 @@ message PoseDataParameter {
   optional float gauss_blob_sigma = 22 [default = 10];
   optional bool multi_label = 23 [default = false];
   optional int32 num_classes = 24 [default = 14];
+  optional bool location_refinement = 25 [default = false];
+  optional bool regress_to_other = 26 [default = false];
 }
 
 message SPPParameter {
