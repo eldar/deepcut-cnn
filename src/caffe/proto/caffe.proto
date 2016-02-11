@@ -1168,6 +1168,7 @@ message PoseDataParameter {
   optional bool location_refinement = 25 [default = false];
   optional bool regress_to_other = 26 [default = false];
   optional bool rpn = 27 [default = false];
+  optional float rpn_distance_threshold = 28 [default = 17];
 }
 
 message SPPParameter {

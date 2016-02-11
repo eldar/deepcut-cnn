@@ -14,7 +14,7 @@ namespace caffe {
 template <typename Dtype>
 class MultiBatch {
  public:
-  static const int MAX_LABELS = 7;
+  static const int MAX_LABELS = 8;
   Blob<Dtype> data_;
   Blob<Dtype> labels_[MAX_LABELS];
 };
@@ -50,6 +50,8 @@ class MultiBasePrefetchingDataLayer :
   int num_labels_;
 };
 
+typedef vector<pair<int, pair<float, float> > > JointList;
+
 /**
  * @brief Provides data to the Net for articulated pose training
  *        Data input is a text file with image path and coordinates
@@ -70,9 +72,18 @@ class PoseDataLayer : public MultiBasePrefetchingDataLayer<Dtype> {
   //virtual inline int ExactNumTopBlobs() const { return 2; }
 
  protected:
-  typedef vector<pair<int, pair<float, float> > > JointList;
   virtual unsigned int PrefetchRand();
   virtual void load_batch(MultiBatch<Dtype>* batch);
+
+  void prepareRPNtargets(std::string filename,
+        Dtype* top_rpn_cls_label,
+        Dtype* top_rpn_reg_targets,
+        Dtype* top_rpn_reg_weights,
+        int item_id,
+        int sc_map_width, int sc_map_height,
+        int truncated_width, int truncated_height,
+        const vector<JointList> &all_people, float rpn_distance_threshold,
+        float scale);
 
   shared_ptr<Caffe::RNG> prefetch_rng_;
   vector<std::pair<std::string, vector<int> > > image_database_;
