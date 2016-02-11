@@ -75,7 +75,6 @@ void SoftmaxWithLossVecLayer<Dtype>::Forward_cpu(
     const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
   // The forward pass computes the softmax prob values.
   bool use_softmax = !this->layer_param_.softmax_with_loss_vec_param().no_softmax();
-  bool smooth_l1 = this->layer_param_.softmax_with_loss_vec_param().smooth_l1();
   if(cross_entropy_) {
     sigmoid_layer_->Forward(softmax_bottom_vec_, softmax_top_vec_);
   } else if(use_softmax) {
@@ -97,17 +96,31 @@ void SoftmaxWithLossVecLayer<Dtype>::Forward_cpu(
   
   for (int i = 0; i < outer_num_; ++i) {
     for (int j = 0; j < inner_num_; j++) {
-      bool ignore = label[i * dim + j] == ignore_value;
-      if (ignore) {
-        continue;
-      }
-      if(cross_entropy_) {
-        for (int c = 0; c < num_classes; ++c) {
+
+      if(cross_entropy_)
+      {
+        bool one_alive = false;
+        for (int c = 0; c < num_classes; ++c)
+        {
           int idx = i * dim + c * inner_num_ + j;
+          bool ignore = label[idx] == ignore_value;
+          if(ignore)
+              continue;
+          one_alive = true;
           loss -= input_data[idx] * (label[idx] - (input_data[idx] >= 0)) -
                      log(1 + exp(input_data[idx] - 2 * input_data[idx] * (input_data[idx] >= 0)));
         }
-      } else if(use_softmax) {
+        if(one_alive)
+            ++count;
+      }
+      else if(use_softmax)
+      {
+        bool ignore = label[i * dim + j] == ignore_value;
+        if (ignore)
+          continue;
+
+        ++count;
+
         int label_value = -1;
         Dtype label_prob = FLT_MIN;
         for (int c = 0; c < num_classes; ++c) {
@@ -119,29 +132,11 @@ void SoftmaxWithLossVecLayer<Dtype>::Forward_cpu(
         }
         loss -= log(std::max(prob_data[i * dim + label_value * inner_num_ + j],
                             Dtype(FLT_MIN)));
-      } else if(smooth_l1) {
-        for (int c = 0; c < num_classes; ++c) {
-          int idx = i * dim + c * inner_num_ + j;
-          Dtype diff = prob_data[idx] - label[idx];
-          Dtype abs_diff = abs(diff); 
-          if (abs_diff < 1) {
-            loss += 0.5 * diff * diff;
-          } else {
-            loss += abs_diff - 0.5;
-          }
-        }
-      } else { // regression loss
-        for (int c = 0; c < num_classes; ++c) {
-          int idx = i * dim + c * inner_num_ + j;
-          Dtype diff = prob_data[idx] - label[idx];
-          loss += diff*diff;
-        }
       }
-      ++count;
     }
   }
   if (normalize_) {
-    top[0]->mutable_cpu_data()[0] = loss / count;
+    top[0]->mutable_cpu_data()[0] = loss / std::max(count, 100);
   } else {
     top[0]->mutable_cpu_data()[0] = loss / outer_num_;
   }
@@ -152,8 +147,10 @@ void SoftmaxWithLossVecLayer<Dtype>::Forward_cpu(
 
 template <typename Dtype>
 void SoftmaxWithLossVecLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
-  bool smooth_l1 = this->layer_param_.softmax_with_loss_vec_param().smooth_l1();
+    const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom)
+{
+  bool use_softmax = !this->layer_param_.softmax_with_loss_vec_param().no_softmax();
+
   if (propagate_down[1]) {
     LOG(FATAL) << this->type()
                << " Layer cannot backpropagate to label inputs.";
@@ -168,32 +165,47 @@ void SoftmaxWithLossVecLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& to
     int num_classes = bottom[0]->shape(softmax_axis_);
     int count = 0;
 
-    for (int i = 0; i < outer_num_; ++i) {
-      for (int j = 0; j < inner_num_; ++j) {
-        bool ignore = label[i * dim + j] == ignore_value;
-        if (ignore) {
-          for (int c = 0; c < num_classes; ++c) {
-            bottom_diff[i * dim + c * inner_num_ + j] = 0;
+    for (int i = 0; i < outer_num_; ++i)
+    {
+      for (int j = 0; j < inner_num_; ++j)
+      {
+        if(cross_entropy_)
+        {
+          bool one_alive = false;
+          for (int c = 0; c < num_classes; ++c)
+          {
+            int idx = i * dim + c * inner_num_ + j;
+            bool ignore = label[idx] == ignore_value;
+            if (ignore)
+                bottom_diff[idx] = 0;
+            else
+                one_alive = true;
           }
-        } else {
-          if(smooth_l1) {
-            for (int c = 0; c < num_classes; ++c) {
-              const int idx = i * dim + c * inner_num_ + j;
-              const Dtype diff = bottom_diff[idx];
-              const Dtype abs_diff = abs(diff);
-              if (abs_diff >= 1) {
-                bottom_diff[idx] = (Dtype(0) < diff) - (diff < Dtype(0));
+          if(one_alive)
+              count++;
+        }
+        else if(use_softmax)
+        {
+            bool ignore = label[i * dim + j] == ignore_value;
+            if (ignore)
+            {
+              for (int c = 0; c < num_classes; ++c)
+              {
+                bottom_diff[i * dim + c * inner_num_ + j] = 0;
               }
             }
-          }
-          ++count;
+            else
+            {
+              ++count;
+            }
         }
       }
     }
+
     // Scale gradient
     const Dtype loss_weight = top[0]->cpu_diff()[0];
     if (normalize_) {
-      caffe_scal(prob_.count(), loss_weight / count, bottom_diff);
+      caffe_scal(prob_.count(), loss_weight / std::max(count, 100), bottom_diff);
     } else {
       caffe_scal(prob_.count(), loss_weight / outer_num_, bottom_diff);
     }
