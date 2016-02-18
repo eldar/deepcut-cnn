@@ -349,6 +349,9 @@ void PoseDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
   }
 
   uniform_real_gen = new UniformGenerator();
+
+  total_num_images_ = 0;
+  rejected_images_ = 0;
 }
 
 template <typename Dtype>
@@ -714,10 +717,16 @@ void PoseDataLayer<Dtype>::load_batch(MultiBatch<Dtype>* batch) {
     const int input_height = (sc_map_height/*-1*/) * stride;
     const int input_width = (sc_map_width/*-1*/) * stride;
 
+    //total_num_images_ += 1;
     // some images don't fit to GPU's memory so we have to limit ourselves
     const int max_allowed_size = 700; //852;
     if(input_height*input_width > max_allowed_size*max_allowed_size)
+    {
+        //rejected_images_ += 1;
         continue;
+    }
+
+    //LOG(INFO) << "rejected/total " << rejected_images_ << "/" << total_num_images_;
 
     int num_labels = this->num_labels_;
 

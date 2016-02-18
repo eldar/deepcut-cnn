@@ -99,6 +99,8 @@ class PoseDataLayer : public MultiBasePrefetchingDataLayer<Dtype> {
   Blob<Dtype> sample_mask_;
   void *uniform_real_gen;
   std::vector<float> xs,ys;
+
+  int total_num_images_, rejected_images_;
 };
 
 template <typename Dtype>
