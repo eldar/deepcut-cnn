@@ -1177,6 +1177,8 @@ message PoseDataParameter {
   optional bool regress_to_other = 26 [default = false];
   optional bool rpn = 27 [default = false];
   optional float rpn_distance_threshold = 28 [default = 17];
+  optional bool segmentation = 29 [default = false];
+  optional int32 segmentation_stride = 30 [default = 8];
 }
 
 message SPPParameter {

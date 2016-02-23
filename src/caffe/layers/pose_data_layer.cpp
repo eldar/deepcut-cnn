@@ -193,6 +193,8 @@ void PoseDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
   } else {
     prefetch_rng_.reset();
   }
+
+  rand_gen_ = new MyRandGen();
   
   std::ifstream infile(this->layer_param_.pose_data_param().source().c_str());
   CHECK(infile.good()) << "Failed to open pose file "
@@ -268,10 +270,14 @@ void PoseDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
   int input_height = 160; // this->layer_param_.pose_data_param().input_height();
   int input_width  = 160; // this->layer_param_.pose_data_param().input_width();
   const int stride = 8;
-  // FIXSTRIDE
-  int sc_map_height = input_height/stride/*+1*/;
-  int sc_map_width = input_width/stride/*+1*/;
-  
+  const int segm_stride = this->layer_param().pose_data_param().segmentation_stride();
+
+  // FIX STRIDE
+  int sc_map_height = ceil(input_height/stride)/*+1*/;
+  int sc_map_width = ceil(input_width/stride)/*+1*/;
+  int segm_scmap_height = ceil(input_height / segm_stride);
+  int segm_scmap_width = ceil(input_width / segm_stride);
+
   bool no_bg_class = this->layer_param_.pose_data_param().no_bg_class();
     
   const int batch_size = this->layer_param_.pose_data_param().batch_size();
@@ -282,12 +288,59 @@ void PoseDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
   LOG(INFO) << "output data size: " << top[0]->num() << ","
       << top[0]->channels() << "," << top[0]->height() << ","
       << top[0]->width();
+
+  // -------------------- top blob indexes ----------------------
+  bool locref = this->layer_param_.pose_data_param().location_refinement();
+  bool allreg = this->layer_param_.pose_data_param().regress_to_other();
+  bool rpn = this->layer_param_.pose_data_param().rpn();
+  bool segmentation = this->layer_param_.pose_data_param().segmentation();
+
+  int idx_cls = 0;
+  int idx_locref_targets = 0;
+  int idx_locref_weights = 0;
+  int idx_allreg_targets = 0;
+  int idx_allreg_weights = 0;
+  int idx_rpn_cls_targets = 0;
+  int idx_rpn_reg_targets = 0;
+  int idx_rpn_reg_weights = 0;
+  int idx_segm_cls_targets = 0;
+
+  int label_idx = 0;
+  idx_cls = label_idx;
+  label_idx += 1;
+  if(locref)
+  {
+    idx_locref_targets = label_idx;
+    idx_locref_weights = label_idx + 1;
+    label_idx += 2;
+  }
+  if(allreg)
+  {
+    idx_allreg_targets = label_idx;
+    idx_allreg_weights = label_idx + 1;
+    label_idx += 2;
+  }
+  if(rpn)
+  {
+    idx_rpn_cls_targets = label_idx;
+    idx_rpn_reg_targets = label_idx + 1;
+    idx_rpn_reg_weights = label_idx + 2;
+    label_idx += 3;
+  }
+  if(segmentation)
+  {
+    idx_segm_cls_targets = label_idx;
+    label_idx += 1;
+  }
+  // ---------------------------------------------------------
+
+
   // label
   int num_labels = this->num_labels_;
   const int num_classes = this->layer_param_.pose_data_param().num_classes();
   const int NUM_JOINTS = num_classes;
 
-  neighbour_stats_ = readMatricesFromFile("/home/insafutdin/pool0/experiments/mpii-all-joints-reg/data/all_stats.txt");
+  neighbour_stats_ = readMatricesFromFile("/BS/eldar/work/pose/exp/mpii-all-joints-reg/data/all_stats.txt");
   SimpleMatrix *regr_edges = neighbour_stats_[0];
   const int num_regr_targets = regr_edges->rows();
 
@@ -295,38 +348,50 @@ void PoseDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
   int num_locs = NUM_JOINTS*2;
   int num_next_channels = num_regr_targets*2;
 
-  top[1]->Reshape(batch_size, label_channels, sc_map_height, sc_map_width);
-  if(num_labels >= 3) {
-    top[2]->Reshape(batch_size, num_locs, sc_map_height, sc_map_width);
-    top[3]->Reshape(batch_size, num_locs, sc_map_height, sc_map_width);
+  top[idx_cls+1]->Reshape(batch_size, label_channels, sc_map_height, sc_map_width);
+  if(locref) {
+    top[idx_locref_targets+1]->Reshape(batch_size, num_locs, sc_map_height, sc_map_width);
+    top[idx_locref_weights+1]->Reshape(batch_size, num_locs, sc_map_height, sc_map_width);
   }
-  if(num_labels >= 5) {
-      top[4]->Reshape(batch_size, num_next_channels, sc_map_height, sc_map_width);
-      top[5]->Reshape(batch_size, num_next_channels, sc_map_height, sc_map_width);
+  if(allreg) {
+      top[idx_allreg_targets+1]->Reshape(batch_size, num_next_channels, sc_map_height, sc_map_width);
+      top[idx_allreg_weights+1]->Reshape(batch_size, num_next_channels, sc_map_height, sc_map_width);
   }
 
   const int num_rpn_cls_labels = num_anchors;
   const int num_rpn_regr_targets = num_anchors * num_reg_targs;
-  bool rpn = this->layer_param_.pose_data_param().rpn();
+
   if(rpn)
   {
-      top[6]->Reshape(batch_size, num_anchors, sc_map_height, sc_map_width);
-      top[7]->Reshape(batch_size, num_rpn_regr_targets, sc_map_height, sc_map_width);
-      top[8]->Reshape(batch_size, num_rpn_regr_targets, sc_map_height, sc_map_width);
+      top[idx_rpn_cls_targets+1]->Reshape(batch_size, num_anchors, sc_map_height, sc_map_width);
+      top[idx_rpn_reg_targets+1]->Reshape(batch_size, num_rpn_regr_targets, sc_map_height, sc_map_width);
+      top[idx_rpn_reg_weights+1]->Reshape(batch_size, num_rpn_regr_targets, sc_map_height, sc_map_width);
   }
+
+  if(segmentation) {
+      top[idx_segm_cls_targets+1]->Reshape(batch_size, NUM_SEGM_CLASSES, segm_scmap_height, segm_scmap_width);
+  }
+
   LOG(WARNING) << "--------------------- top blobs ------------------------ " << top.size();
 
   for (int i = 0; i < this->PREFETCH_COUNT; ++i) {
-    this->prefetch_[i].labels_[0].Reshape(batch_size, label_channels, sc_map_height, sc_map_width);
-    this->prefetch_[i].labels_[1].Reshape(batch_size, num_locs, sc_map_height, sc_map_width);
-    this->prefetch_[i].labels_[2].Reshape(batch_size, num_locs, sc_map_height, sc_map_width);
-    this->prefetch_[i].labels_[3].Reshape(batch_size, num_next_channels, sc_map_height, sc_map_width);
-    this->prefetch_[i].labels_[4].Reshape(batch_size, num_next_channels, sc_map_height, sc_map_width);
-
-    // RPN
-    this->prefetch_[i].labels_[5].Reshape(batch_size, num_rpn_cls_labels, sc_map_height, sc_map_width);
-    this->prefetch_[i].labels_[6].Reshape(batch_size, num_rpn_regr_targets, sc_map_height, sc_map_width);
-    this->prefetch_[i].labels_[7].Reshape(batch_size, num_rpn_regr_targets, sc_map_height, sc_map_width);
+    this->prefetch_[i].labels_[idx_cls].Reshape(batch_size, label_channels, sc_map_height, sc_map_width);
+    if(locref) {
+      this->prefetch_[i].labels_[idx_locref_targets].Reshape(batch_size, num_locs, sc_map_height, sc_map_width);
+      this->prefetch_[i].labels_[idx_locref_weights].Reshape(batch_size, num_locs, sc_map_height, sc_map_width);
+    }
+    if(allreg) {
+      this->prefetch_[i].labels_[idx_allreg_targets].Reshape(batch_size, num_next_channels, sc_map_height, sc_map_width);
+      this->prefetch_[i].labels_[idx_allreg_weights].Reshape(batch_size, num_next_channels, sc_map_height, sc_map_width);
+    }
+    if(rpn) {
+      this->prefetch_[i].labels_[idx_rpn_cls_targets].Reshape(batch_size, num_rpn_cls_labels, sc_map_height, sc_map_width);
+      this->prefetch_[i].labels_[idx_rpn_reg_targets].Reshape(batch_size, num_rpn_regr_targets, sc_map_height, sc_map_width);
+      this->prefetch_[i].labels_[idx_rpn_reg_weights].Reshape(batch_size, num_rpn_regr_targets, sc_map_height, sc_map_width);
+    }
+    if(segmentation) {
+      this->prefetch_[i].labels_[idx_segm_cls_targets].Reshape(batch_size, NUM_SEGM_CLASSES, segm_scmap_height, segm_scmap_width);
+    }
   }
 
   this->min_distance_.Reshape(batch_size, 1, sc_map_height, sc_map_width);
@@ -626,6 +691,7 @@ void PoseDataLayer<Dtype>::load_batch(MultiBatch<Dtype>* batch) {
   bool locref = this->layer_param_.pose_data_param().location_refinement();
   bool allreg = this->layer_param_.pose_data_param().regress_to_other();
   bool rpn = this->layer_param_.pose_data_param().rpn();
+  bool segmentation = this->layer_param_.pose_data_param().segmentation();
 
   UniformGenerator *real_gen = (UniformGenerator*)uniform_real_gen;
 
@@ -633,6 +699,7 @@ void PoseDataLayer<Dtype>::load_batch(MultiBatch<Dtype>* batch) {
   SimpleMatrix *regr_means = neighbour_stats_[1];
   SimpleMatrix *regr_std_devs = neighbour_stats_[2];
 
+  // -------------------- top blob indexes ----------------------
   int idx_cls = 0;
   int idx_locref_targets = 0;
   int idx_locref_weights = 0;
@@ -641,6 +708,7 @@ void PoseDataLayer<Dtype>::load_batch(MultiBatch<Dtype>* batch) {
   int idx_rpn_cls_targets = 0;
   int idx_rpn_reg_targets = 0;
   int idx_rpn_reg_weights = 0;
+  int idx_segm_cls_targets = 0;
 
   int label_idx = 0;
   idx_cls = label_idx;
@@ -664,6 +732,12 @@ void PoseDataLayer<Dtype>::load_batch(MultiBatch<Dtype>* batch) {
       idx_rpn_reg_weights = label_idx + 2;
       label_idx += 3;
   }
+  if(segmentation)
+  {
+    idx_segm_cls_targets = label_idx;
+    label_idx += 1;
+  }
+  // ---------------------------------------------------------
 
   CHECK_LE(label_idx, MultiBatch<Dtype>::MAX_LABELS) << "number of labels exceeds MAX_LABELS";
 
@@ -1006,6 +1080,37 @@ void PoseDataLayer<Dtype>::load_batch(MultiBatch<Dtype>* batch) {
                 truncated_width, truncated_height,
                 all_people, rpn_dist_thresh,
                 scale);
+    }
+    if(segmentation) {
+        const int segm_stride = this->layer_param().pose_data_param().segmentation_stride();
+        const int segm_scmap_height = ceil(input_height / segm_stride);
+        const int segm_scmap_width = ceil(input_width / segm_stride);
+        Dtype *top_segm_cls_label = prepareLabel(labels[idx_segm_cls_targets], batch_size,
+                                                 NUM_SEGM_CLASSES, segm_scmap_width, segm_scmap_height,
+                                                 Dtype(ignore_value));
+
+        sticks_segmentation(top_segm_cls_label, scale, segm_stride,
+                            segm_scmap_width, segm_scmap_height,
+                            item_id, all_people[0],
+                            rand_gen_);
+
+        /*
+        int num_segm_pixels = NUM_SEGM_CLASSES * segm_scmap_width * segm_scmap_height;
+        int num_zero = 0;
+        int num_ignore = 0;
+        int num_pos = 0;
+        for(int k = 0; k < num_segm_pixels; ++k)
+        {
+            Dtype val = top_segm_cls_label[k];
+            if(val == Dtype(ignore_value))
+                num_ignore++;
+            else if(val == 0.0)
+                num_zero++;
+            else if(val == 1.0)
+                num_pos++;
+        }
+        LOG(INFO) << "SEGM STATS "<< num_pos << " " << num_zero << " " << num_ignore;
+        */
     }
 
     trans_time += timer.MicroSeconds();

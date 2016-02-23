@@ -7,6 +7,8 @@
 #include "caffe/layers/base_data_layer.hpp"
 #include "caffe/layers/loss_layer.hpp"
 
+#include "caffe/pose/misc.hpp"
+
 class SimpleMatrix;
 
 namespace caffe {
@@ -14,7 +16,7 @@ namespace caffe {
 template <typename Dtype>
 class MultiBatch {
  public:
-  static const int MAX_LABELS = 8;
+  static const int MAX_LABELS = 9;
   Blob<Dtype> data_;
   Blob<Dtype> labels_[MAX_LABELS];
 };
@@ -50,14 +52,13 @@ class MultiBasePrefetchingDataLayer :
   int num_labels_;
 };
 
-typedef vector<pair<int, pair<float, float> > > JointList;
-
 /**
  * @brief Provides data to the Net for articulated pose training
  *        Data input is a text file with image path and coordinates
  *        of joints
  *
  */
+
 template <typename Dtype>
 class PoseDataLayer : public MultiBasePrefetchingDataLayer<Dtype> {
  public:
@@ -86,6 +87,7 @@ class PoseDataLayer : public MultiBasePrefetchingDataLayer<Dtype> {
         float scale);
 
   shared_ptr<Caffe::RNG> prefetch_rng_;
+  MyRandGen *rand_gen_;
   vector<std::pair<std::string, vector<int> > > image_database_;
   vector<vector<JointList> > joint_database_;
   bool multiperson_;
