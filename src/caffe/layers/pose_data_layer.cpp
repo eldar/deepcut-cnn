@@ -693,6 +693,8 @@ void PoseDataLayer<Dtype>::load_batch(MultiBatch<Dtype>* batch) {
   bool rpn = this->layer_param_.pose_data_param().rpn();
   bool segmentation = this->layer_param_.pose_data_param().segmentation();
 
+  const int max_input_size = this->layer_param_.pose_data_param().max_input_size();
+
   UniformGenerator *real_gen = (UniformGenerator*)uniform_real_gen;
 
   SimpleMatrix *regr_edges = neighbour_stats_[0];
@@ -793,7 +795,7 @@ void PoseDataLayer<Dtype>::load_batch(MultiBatch<Dtype>* batch) {
 
     //total_num_images_ += 1;
     // some images don't fit to GPU's memory so we have to limit ourselves
-    const int max_allowed_size = 700; //852;
+    const int max_allowed_size = max_input_size; //852;
     if(input_height*input_width > max_allowed_size*max_allowed_size)
     {
         //rejected_images_ += 1;

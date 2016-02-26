@@ -1179,6 +1179,7 @@ message PoseDataParameter {
   optional float rpn_distance_threshold = 28 [default = 17];
   optional bool segmentation = 29 [default = false];
   optional int32 segmentation_stride = 30 [default = 8];
+  optional int32 max_input_size = 31 [default = 700];
 }
 
 message SPPParameter {
