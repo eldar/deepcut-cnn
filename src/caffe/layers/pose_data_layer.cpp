@@ -372,7 +372,7 @@ void PoseDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
       top[idx_segm_cls_targets+1]->Reshape(batch_size, NUM_SEGM_CLASSES, segm_scmap_height, segm_scmap_width);
   }
 
-  LOG(WARNING) << "--------------------- top blobs ------------------------ " << top.size();
+  LOG(WARNING) << "number of top blobs " << top.size();
 
   for (int i = 0; i < this->PREFETCH_COUNT; ++i) {
     this->prefetch_[i].labels_[idx_cls].Reshape(batch_size, label_channels, sc_map_height, sc_map_width);
@@ -412,6 +412,10 @@ void PoseDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
       }
     }
   }
+
+  const int max_input_size = this->layer_param_.pose_data_param().max_input_size();
+  LOG(INFO) << "Maximum input size: " << max_input_size << " * " << max_input_size;
+
 
   uniform_real_gen = new UniformGenerator();
 
