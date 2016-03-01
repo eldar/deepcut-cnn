@@ -76,16 +76,6 @@ class PoseDataLayer : public MultiBasePrefetchingDataLayer<Dtype> {
   virtual unsigned int PrefetchRand();
   virtual void load_batch(MultiBatch<Dtype>* batch);
 
-  void prepareRPNtargets(std::string filename,
-        Dtype* top_rpn_cls_label,
-        Dtype* top_rpn_reg_targets,
-        Dtype* top_rpn_reg_weights,
-        int item_id,
-        int sc_map_width, int sc_map_height,
-        int truncated_width, int truncated_height,
-        const vector<JointList> &all_people, float rpn_distance_threshold,
-        float scale);
-
   shared_ptr<Caffe::RNG> prefetch_rng_;
   MyRandGen *rand_gen_;
   vector<std::pair<std::string, vector<int> > > image_database_;
