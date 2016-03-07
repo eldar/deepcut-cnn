@@ -291,7 +291,11 @@ void PoseDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
   const int num_classes = this->layer_param_.pose_data_param().num_classes();
   const int NUM_JOINTS = num_classes;
 
-  neighbour_stats_ = readMatricesFromFile("/BS/eldar/work/pose/exp/mpii-all-joints-reg/data/all_stats.txt");
+  auto joint_stats_file = this->layer_param().pose_data_param().has_joint_pairs_stats() ?
+              this->layer_param().pose_data_param().joint_pairs_stats() :
+              "/BS/eldar/work/pose/exp/mpii-all-joints-reg/data/all_stats.txt";
+
+  neighbour_stats_ = readMatricesFromFile(joint_stats_file);
   SimpleMatrix *regr_edges = neighbour_stats_[0];
   const int num_regr_targets = regr_edges->rows();
 

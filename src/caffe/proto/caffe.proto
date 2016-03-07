@@ -1181,6 +1181,7 @@ message PoseDataParameter {
   optional int32 segmentation_stride = 30 [default = 8];
   optional int32 max_input_size = 31 [default = 700];
   optional bool weight_targets = 32 [default = false];
+  optional string joint_pairs_stats = 33;
 }
 
 message SPPParameter {
