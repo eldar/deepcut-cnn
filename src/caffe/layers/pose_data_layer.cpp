@@ -237,8 +237,10 @@ void PoseDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
   bool allreg = this->layer_param_.pose_data_param().regress_to_other();
   bool rpn = this->layer_param_.pose_data_param().rpn();
   bool segmentation = this->layer_param_.pose_data_param().segmentation();
+  bool weight_targets = this->layer_param().pose_data_param().weight_targets();
 
   int idx_cls = 0;
+  int idx_cls_weights = 0;
   int idx_locref_targets = 0;
   int idx_locref_weights = 0;
   int idx_allreg_targets = 0;
@@ -249,8 +251,14 @@ void PoseDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
   int idx_segm_cls_targets = 0;
 
   int label_idx = 0;
+  // TODO fix to label_idx++
   idx_cls = label_idx;
   label_idx += 1;
+  if(weight_targets)
+  {
+    idx_cls_weights = label_idx;
+    label_idx += 1;
+  }
   if(locref)
   {
     idx_locref_targets = label_idx;
@@ -292,6 +300,9 @@ void PoseDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
   int num_next_channels = num_regr_targets*2;
 
   top[idx_cls+1]->Reshape(batch_size, label_channels, sc_map_height, sc_map_width);
+  if(weight_targets) {
+    top[idx_cls_weights+1]->Reshape(batch_size, label_channels, sc_map_height, sc_map_width);
+  }
   if(locref) {
     top[idx_locref_targets+1]->Reshape(batch_size, num_locs, sc_map_height, sc_map_width);
     top[idx_locref_weights+1]->Reshape(batch_size, num_locs, sc_map_height, sc_map_width);
@@ -319,6 +330,9 @@ void PoseDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
 
   for (int i = 0; i < this->PREFETCH_COUNT; ++i) {
     this->prefetch_[i].labels_[idx_cls].Reshape(batch_size, label_channels, sc_map_height, sc_map_width);
+    if(weight_targets) {
+      this->prefetch_[i].labels_[idx_cls_weights].Reshape(batch_size, label_channels, sc_map_height, sc_map_width);
+    }
     if(locref) {
       this->prefetch_[i].labels_[idx_locref_targets].Reshape(batch_size, num_locs, sc_map_height, sc_map_width);
       this->prefetch_[i].labels_[idx_locref_weights].Reshape(batch_size, num_locs, sc_map_height, sc_map_width);
@@ -424,6 +438,7 @@ void PoseDataLayer<Dtype>::load_batch(MultiBatch<Dtype>* batch) {
   bool allreg = this->layer_param_.pose_data_param().regress_to_other();
   bool rpn = this->layer_param_.pose_data_param().rpn();
   bool segmentation = this->layer_param_.pose_data_param().segmentation();
+  bool weight_targets = this->layer_param().pose_data_param().weight_targets();
 
   const int max_input_size = this->layer_param_.pose_data_param().max_input_size();
 
@@ -435,6 +450,7 @@ void PoseDataLayer<Dtype>::load_batch(MultiBatch<Dtype>* batch) {
 
   // -------------------- top blob indexes ----------------------
   int idx_cls = 0;
+  int idx_cls_weights = 0;
   int idx_locref_targets = 0;
   int idx_locref_weights = 0;
   int idx_allreg_targets = 0;
@@ -445,8 +461,14 @@ void PoseDataLayer<Dtype>::load_batch(MultiBatch<Dtype>* batch) {
   int idx_segm_cls_targets = 0;
 
   int label_idx = 0;
+
   idx_cls = label_idx;
   label_idx += 1;
+  if(weight_targets)
+  {
+    idx_cls_weights = label_idx;
+    label_idx += 1;
+  }
   if(locref)
   {
     idx_locref_targets = label_idx;
@@ -548,6 +570,9 @@ void PoseDataLayer<Dtype>::load_batch(MultiBatch<Dtype>* batch) {
     batch->data_.Reshape(batch_size, image_size[0], input_height, input_width);
     Dtype* top_label =
             prepareLabel(labels[idx_cls], batch_size, label_channels, sc_map_width, sc_map_height,  Dtype(ignore_value));
+    Dtype* top_weights_label = 0;
+    if(weight_targets)
+        top_weights_label = prepareLabel(labels[idx_cls_weights], batch_size, label_channels, sc_map_width, sc_map_height, Dtype(1));
     Dtype* top_loc_label = 0;
     Dtype* top_loc_weights = 0;
     if(locref) {
@@ -766,8 +791,29 @@ void PoseDataLayer<Dtype>::load_batch(MultiBatch<Dtype>* batch) {
       }
     }
     
-    // sample negatives
-    if(use_fg_fraction)
+    if(weight_targets) // downweight negatives
+    {
+        const int total_num_samples = sc_map_height * sc_map_width;
+        Dtype weight = (1-fg_fraction)/fg_fraction*(num_positives)/(total_num_samples-num_positives);
+
+        for (int j = 0; j < sc_map_height; ++j) {
+          for (int i = 0; i < sc_map_width; ++i) {
+
+              int short_index = ((item_id) * sc_map_height + j)
+                                 * sc_map_width + i;
+              if (sample_mask_data[short_index] == 1)
+                  continue;
+
+              for(int c = first_class_idx; c <= num_classes; ++c) {
+                  int top_index = ((item_id * label_dim + c-first_class_idx) * sc_map_height + j)
+                      * sc_map_width + i;
+                  top_label[top_index] = c == 0 ? 1 : 0;
+                  top_weights_label[top_index] = weight;
+              }
+          }
+        }
+    }
+    else if(use_fg_fraction) // or sample negatives
     {
         const int max_negatives = num_positives * (1.0-fg_fraction) / fg_fraction;
         int num_negatives = 0;

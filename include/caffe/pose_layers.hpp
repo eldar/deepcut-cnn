@@ -16,7 +16,7 @@ namespace caffe {
 template <typename Dtype>
 class MultiBatch {
  public:
-  static const int MAX_LABELS = 9;
+  static const int MAX_LABELS = 10;
   Blob<Dtype> data_;
   Blob<Dtype> labels_[MAX_LABELS];
 };
@@ -107,8 +107,10 @@ class SoftmaxWithLossVecLayer : public LossLayer<Dtype> {
 
   virtual inline const char* type() const { return "SoftmaxWithLossVec"; }
   virtual inline int ExactNumTopBlobs() const { return -1; }
+  virtual inline int ExactNumBottomBlobs() const { return -1; }
   virtual inline int MinTopBlobs() const { return 1; }
   virtual inline int MaxTopBlobs() const { return 2; }
+  virtual inline int MaxBottomBlobs() const { return 3; }
 
  protected:
   virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
@@ -140,6 +142,7 @@ class SoftmaxWithLossVecLayer : public LossLayer<Dtype> {
   /// (otherwise just by the batch size).
   bool normalize_;
   bool cross_entropy_;
+  bool has_weights_;
 
   int softmax_axis_, outer_num_, inner_num_;
 };

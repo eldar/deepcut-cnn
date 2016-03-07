@@ -1180,6 +1180,7 @@ message PoseDataParameter {
   optional bool segmentation = 29 [default = false];
   optional int32 segmentation_stride = 30 [default = 8];
   optional int32 max_input_size = 31 [default = 700];
+  optional bool weight_targets = 32 [default = false];
 }
 
 message SPPParameter {

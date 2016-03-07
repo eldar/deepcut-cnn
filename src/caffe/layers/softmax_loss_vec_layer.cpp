@@ -22,6 +22,7 @@ void SoftmaxWithLossVecLayer<Dtype>::LayerSetUp(
   softmax_top_vec_.push_back(&prob_);
 
   cross_entropy_ = this->layer_param_.softmax_with_loss_vec_param().cross_entropy();
+  has_weights_ = (bottom.size() == 3);
   
   if(cross_entropy_)
   {
@@ -88,6 +89,9 @@ void SoftmaxWithLossVecLayer<Dtype>::Forward_cpu(
   const Dtype* label = bottom[1]->cpu_data();
   const Dtype* prob_data = prob_.cpu_data();
   const Dtype* input_data = bottom[0]->cpu_data();
+  const Dtype* weight_data = 0;
+  if(has_weights_)
+      weight_data = bottom[2]->cpu_data();
 
   int dim = prob_.count() / outer_num_;
   int num_classes = prob_.shape(1);
@@ -107,8 +111,10 @@ void SoftmaxWithLossVecLayer<Dtype>::Forward_cpu(
           if(ignore)
               continue;
           one_alive = true;
-          loss -= input_data[idx] * (label[idx] - (input_data[idx] >= 0)) -
-                     log(1 + exp(input_data[idx] - 2 * input_data[idx] * (input_data[idx] >= 0)));
+          const Dtype weight = has_weights_ ? weight_data[idx] : 1.0;
+          Dtype loss_val = input_data[idx] * (label[idx] - (input_data[idx] >= 0)) -
+                  log(1 + exp(input_data[idx] - 2 * input_data[idx] * (input_data[idx] >= 0)));
+          loss -= loss_val * weight;
         }
         if(one_alive)
             ++count;
@@ -161,15 +167,29 @@ void SoftmaxWithLossVecLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& to
     const Dtype* label = bottom[1]->cpu_data();
     caffe_copy(prob_.count(), prob_data, bottom_diff);
     caffe_axpy(prob_.count(), Dtype(-1.0), label, bottom_diff);
+
+    const Dtype* weight_data = 0;
+    if(has_weights_)
+    {
+        weight_data = bottom[2]->cpu_data();
+        caffe_mul(prob_.count(), bottom_diff, weight_data, bottom_diff);
+    }
+
     int dim = prob_.count() / outer_num_;
     int num_classes = bottom[0]->shape(softmax_axis_);
     int count = 0;
 
+    Dtype weight_sum = 0.0;
     for (int i = 0; i < outer_num_; ++i)
     {
       for (int j = 0; j < inner_num_; ++j)
       {
-        if(cross_entropy_)
+        if(has_weights_)
+        {
+          int idx = i * dim + 0 * inner_num_ + j;
+          weight_sum += weight_data[idx];
+        }
+        else if(cross_entropy_)
         {
           bool one_alive = false;
           for (int c = 0; c < num_classes; ++c)
@@ -205,7 +225,8 @@ void SoftmaxWithLossVecLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& to
     // Scale gradient
     const Dtype loss_weight = top[0]->cpu_diff()[0];
     if (normalize_) {
-      caffe_scal(prob_.count(), loss_weight / std::max(count, 100), bottom_diff);
+      const Dtype normaliser = has_weights_ ? weight_sum : count;
+      caffe_scal(prob_.count(), loss_weight / std::max(normaliser, Dtype(100)), bottom_diff);
     } else {
       caffe_scal(prob_.count(), loss_weight / outer_num_, bottom_diff);
     }
