@@ -85,12 +85,15 @@ class PoseDataLayer : public MultiBasePrefetchingDataLayer<Dtype> {
   bool has_mean_values_;
   bool cache_images_;
   vector<std::pair<std::string, Datum > > image_database_cache_;
-  int img_index_;
   vector<SimpleMatrix*> neighbour_stats_;
   Blob<Dtype> min_distance_;
   Blob<Dtype> sample_mask_;
   void *uniform_real_gen;
   std::vector<float> xs,ys;
+
+  // permute training set
+  std::vector<int> data_indices_;
+  int img_index_;
 
   int total_num_images_, rejected_images_;
 };

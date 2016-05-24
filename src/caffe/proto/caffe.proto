@@ -1182,6 +1182,7 @@ message PoseDataParameter {
   optional int32 max_input_size = 31 [default = 700];
   optional bool weight_targets = 32 [default = false];
   optional string joint_pairs_stats = 33;
+  optional bool cycle_training_data = 34 [default = false];
 }
 
 message SPPParameter {

@@ -444,6 +444,8 @@ void PoseDataLayer<Dtype>::load_batch(MultiBatch<Dtype>* batch) {
   bool segmentation = this->layer_param_.pose_data_param().segmentation();
   bool weight_targets = this->layer_param().pose_data_param().weight_targets();
 
+  bool cycle_training_data = this->layer_param().pose_data_param().cycle_training_data();
+
   const int max_input_size = this->layer_param_.pose_data_param().max_input_size();
 
   UniformGenerator *real_gen = (UniformGenerator*)uniform_real_gen;
@@ -505,9 +507,15 @@ void PoseDataLayer<Dtype>::load_batch(MultiBatch<Dtype>* batch) {
   int item_id = 0;
   do {
     unsigned int img_index = PrefetchRand() % num_images;
-    if (sequential)
+    if (cycle_training_data)
     {
-      img_index = img_index_;
+      if(img_index_ == 0)
+      {
+        data_indices_.resize(num_images);
+        std::iota(data_indices_.begin(), data_indices_.end(), 0);
+        std::random_shuffle(data_indices_.begin(), data_indices_.end());
+      }
+      img_index = data_indices_[img_index_];
       img_index_ = (img_index_ + 1) % num_images;
     }
 
