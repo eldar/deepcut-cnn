@@ -1,3 +1,7 @@
+# Pose Estimation
+
+For instructions on how to run pose estimation, consult the respective [documentation file](python/pose/README.md).
+
 # Caffe
 
 [![Build Status](https://travis-ci.org/BVLC/caffe.svg?branch=master)](https://travis-ci.org/BVLC/caffe)
