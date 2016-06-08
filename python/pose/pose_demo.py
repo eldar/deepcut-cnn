@@ -54,9 +54,6 @@ def _npcircle(image, cx, cy, radius, color):
                help=('The scales to use, comma-separated. The most confident '
                      'will be stored. Default: 1.'),
                default='1.')
-@_click.option('--model',
-               type=_click.STRING,
-               help=('Caffe model file'))
 @_click.option('--visualize',
                type=_click.BOOL,
                help='Whether to create a visualization of the pose. Default: True.',
@@ -77,7 +74,6 @@ def _npcircle(image, cx, cy, radius, color):
                default=0)
 def predict_pose_from(image_name,
                       out_name=None,
-                      model=None,
                       scales='1.',
                       visualize=True,
                       folder_image_suffix='.png',
@@ -89,6 +85,8 @@ def predict_pose_from(image_name,
     `IMAGE_NAME` may be an image or a directory, for which all images with
     `folder_image_suffix` will be processed.
     """
+    model_def = '../../models/deepercut/ResNet-152.prototxt'
+    model_bin = '../../models/deepercut/ResNet-152.caffemodel'
     scales = [float(val) for val in scales.split(',')]
     if _os.path.isdir(image_name):
         folder_name = image_name[:]
@@ -121,7 +119,7 @@ def predict_pose_from(image_name,
             image = _np.dstack((image, image, image))
         else:
             image = image[:, :, ::-1]    
-        pose = estimate_pose(image, model, scales)
+        pose = estimate_pose(image, model_def, model_bin, scales)
         _np.savez_compressed(out_name, pose=pose)
         if visualize:
             visim = image[:, :, ::-1].copy()

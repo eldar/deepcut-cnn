@@ -1,41 +1,44 @@
-# Pose Estimation
+# DeeperCut
 
-For instructions on how to run pose estimation, consult the respective [documentation file](python/pose/README.md).
+Here you can find the implementation of the CNN-based human body part detectors,
+used in the [DeeperCut](http://arxiv.org/abs/1605.03170).
 
-# Caffe
+First of all, you should build Caffe and its Python bindings as described in the [official documentation](http://caffe.berkeleyvision.org/installation.html).
 
-[![Build Status](https://travis-ci.org/BVLC/caffe.svg?branch=master)](https://travis-ci.org/BVLC/caffe)
-[![License](https://img.shields.io/badge/license-BSD-blue.svg)](LICENSE)
+In order to run the demo of pose estimation execute the following:
 
-Caffe is a deep learning framework made with expression, speed, and modularity in mind.
-It is developed by the Berkeley Vision and Learning Center ([BVLC](http://bvlc.eecs.berkeley.edu)) and community contributors.
+```
+# you will need to install python's click package, ex. by executing
+$ pip install click
+```
 
-Check out the [project site](http://caffe.berkeleyvision.org) for all the details like
+```
+$ cd <caffe_dir>
+$ export PYTHONPATH=`pwd`/python
 
-- [DIY Deep Learning for Vision with Caffe](https://docs.google.com/presentation/d/1UeKXVgRvvxg9OUdh_UiC5G71UMscNPlvArsWER41PsU/edit#slide=id.p)
-- [Tutorial Documentation](http://caffe.berkeleyvision.org/tutorial/)
-- [BVLC reference models](http://caffe.berkeleyvision.org/model_zoo.html) and the [community model zoo](https://github.com/BVLC/caffe/wiki/Model-Zoo)
-- [Installation instructions](http://caffe.berkeleyvision.org/installation.html)
+# Download Caffe model files
+$ cd models/deepercut
+$ ./download_models.sh
 
-and step-by-step examples.
+# Run demo of single person pose estimation
+$ cd ../../python/pose
+$ python ./pose_demo.py image.png --out_name=prediction
+```
 
-[![Join the chat at https://gitter.im/BVLC/caffe](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/BVLC/caffe?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Please join the [caffe-users group](https://groups.google.com/forum/#!forum/caffe-users) or [gitter chat](https://gitter.im/BVLC/caffe) to ask questions and talk about methods and models.
-Framework development discussions and thorough bug reports are collected on [Issues](https://github.com/BVLC/caffe/issues).
+## Citation
+Please cite Deep(er)Cut in your publications if it helps your research:
 
-Happy brewing!
+    @article{insafutdinov2016deepercut,
+        author = {Eldar Insafutdinov and Leonid Pishchulin and Bjoern Andres and Mykhaylo Andriluka and Bernt Schiele},
+        url = {http://arxiv.org/abs/1605.03170}
+        title = {DeeperCut: A Deeper, Stronger, and Faster Multi-Person Pose Estimation Model},
+        year = {2016}
+    }
 
-## License and Citation
-
-Caffe is released under the [BSD 2-Clause license](https://github.com/BVLC/caffe/blob/master/LICENSE).
-The BVLC reference models are released for unrestricted use.
-
-Please cite Caffe in your publications if it helps your research:
-
-    @article{jia2014caffe,
-      Author = {Jia, Yangqing and Shelhamer, Evan and Donahue, Jeff and Karayev, Sergey and Long, Jonathan and Girshick, Ross and Guadarrama, Sergio and Darrell, Trevor},
-      Journal = {arXiv preprint arXiv:1408.5093},
-      Title = {Caffe: Convolutional Architecture for Fast Feature Embedding},
-      Year = {2014}
+    @inproceedings{pishchulin16cvpr,
+	    title = {DeepCut: Joint Subset Partition and Labeling for Multi Person Pose Estimation},
+	    booktitle = {CVPR'16},
+	    url = {},
+	    author = {Leonid Pishchulin and Eldar Insafutdinov and Siyu Tang and Bjoern Andres and Mykhaylo Andriluka and Peter Gehler and Bernt Schiele}
     }

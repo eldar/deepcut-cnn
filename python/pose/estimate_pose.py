@@ -34,7 +34,7 @@ _STRIDE = 8.
 _MODEL = None
 
 
-def estimate_pose(image, model_file, scales=None):  # pylint: disable=too-many-locals
+def estimate_pose(image, model_def, model_bin, scales=None):  # pylint: disable=too-many-locals
     """
     Get the estimated pose for an image.
 
@@ -70,11 +70,8 @@ def estimate_pose(image, model_file, scales=None):  # pylint: disable=too-many-l
     if scales is None:
         scales = [1.]
     if _MODEL is None:
-        _LOGGER.info("Loading pose model from " + model_file)
-        _MODEL = _caffe.Net(
-            '../../models/pose/ResNet-152.prototxt',
-            str(model_file),
-            _caffe.TEST)
+        _LOGGER.info("Loading pose model...")
+        _MODEL = _caffe.Net(model_def, model_bin, _caffe.TEST)
         _LOGGER.info("Done!")
     _LOGGER.debug("Processing image...")
     im_orig = image.copy()
