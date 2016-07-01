@@ -28,7 +28,7 @@ $ ./download_models.sh
 
 ## Run Demo
 ```
-$ cd ../../python/pose
+$ cd python/pose
 $ python ./pose_demo.py image.png --out_name=prediction
 ```
 
