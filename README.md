@@ -12,12 +12,12 @@ For more information visit http://pose.mpi-inf.mpg.de
 - Build Caffe and Python bindings as described in the [official documentation](http://caffe.berkeleyvision.org/installation.html).
 - Install Python Click package (required for demo only)		
 ```
-pip install click
+$ pip install click
 ```
 - Set PYTHONPATH variable	
 ```
-cd <caffe_dir>
-export PYTHONPATH=`pwd`/python
+$ cd <caffe_dir>
+$ export PYTHONPATH=`pwd`/python
 ```
 
 ## Download Caffe Models
