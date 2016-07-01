@@ -1,6 +1,6 @@
 # DeeperCut Part Detectors
 
-This short documentation describes steps necessary to compile and run CNN-based body part detectors presented in the [DeeperCut paper](http://arxiv.org/abs/1605.03170)
+This short documentation describes steps necessary to compile and run CNN-based body part detectors presented in the [DeeperCut paper](http://arxiv.org/abs/1605.03170):
 
 **Eldar Insafutdinov, Leonid Pishchulin, Bjoern Andres, Mykhaylo Andriluka, and Bernt Schiele   
 DeeperCut:  A Deeper, Stronger, and Faster Multi-Person Pose Estimation Model   
@@ -19,11 +19,13 @@ For more information visit http://pose.mpi-inf.mpg.de
     cd <caffe_dir>
     export PYTHONPATH=`pwd`/python
     ```
+
 ## Download Caffe Models
 ```
 $ cd models/deepercut
 $ ./download_models.sh
 ```
+
 ## Run Demo
 ```
 $ cd ../../python/pose
@@ -34,14 +36,16 @@ $ python ./pose_demo.py image.png --out_name=prediction
 ```
 @article{insafutdinov2016deepercut,
         author = {Eldar Insafutdinov and Leonid Pishchulin and Bjoern Andres and Mykhaylo Andriluka and Bernt Schiele},
-        url = {http://arxiv.org/abs/1605.03170}
         title = {DeeperCut: A Deeper, Stronger, and Faster Multi-Person Pose Estimation Model},
-        year = {2016}
+	journal = {arXiv},
+        year = {2016},
+        url = {http://arxiv.org/abs/1605.03170}
     }
 @inproceedings{pishchulin16cvpr,
-	    title = {DeepCut: Joint Subset Partition and Labeling for Multi Person Pose Estimation},
-	        booktitle = {CVPR'16},
-		    url = {http://arxiv.org/abs/1511.06645},
-		        author = {Leonid Pishchulin and Eldar Insafutdinov and Siyu Tang and Bjoern Andres and Mykhaylo Andriluka and Peter Gehler and Bernt Schiele}
+	author = {Leonid Pishchulin and Eldar Insafutdinov and Siyu Tang and Bjoern Andres and Mykhaylo Andriluka and Peter Gehler and Bernt Schiele},
+	title = {DeepCut: Joint Subset Partition and Labeling for Multi Person Pose Estimation},
+	booktitle = {IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
+        year = {2016},
+	url = {http://arxiv.org/abs/1511.06645}
 }
 ```
