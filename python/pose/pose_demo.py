@@ -26,7 +26,7 @@ from estimate_pose import estimate_pose
 _LOGGER = _logging.getLogger(__name__)
 
 
-def _npcircle(image, cx, cy, radius, color):
+def _npcircle(image, cx, cy, radius, color, transparency=0.0):
     """Draw a circle on an image using only numpy methods."""
     radius = int(radius)
     cx = int(cx)
@@ -34,8 +34,8 @@ def _npcircle(image, cx, cy, radius, color):
     y, x = _np.ogrid[-radius: radius, -radius: radius]
     index = x**2 + y**2 <= radius**2
     image[cy-radius:cy+radius, cx-radius:cx+radius][index] = (
-        image[cy-radius:cy+radius, cx-radius:cx+radius][index].astype('float32') * 0.4 +
-        _np.array(color).astype('float32') * 0.6).astype('uint8')
+        image[cy-radius:cy+radius, cx-radius:cx+radius][index].astype('float32') * transparency +
+        _np.array(color).astype('float32') * (1.0 - transparency)).astype('uint8')
 
 
 ###############################################################################
@@ -123,12 +123,16 @@ def predict_pose_from(image_name,
         _np.savez_compressed(out_name, pose=pose)
         if visualize:
             visim = image[:, :, ::-1].copy()
+            colors = [[255, 0, 0],[0, 255, 0],[0, 0, 255],[0,245,255],[255,131,250],[255,255,0],
+                      [255, 0, 0],[0, 255, 0],[0, 0, 255],[0,245,255],[255,131,250],[255,255,0],
+                      [0,0,0],[255,255,255]]
             for p_idx in range(14):
                 _npcircle(visim,
                           pose[0, p_idx],
                           pose[1, p_idx],
-                          5,
-                          (255, 0, 0))
+                          8,
+                          colors[p_idx],
+                          0.0)
             vis_name = out_name + '_vis.png'
             _scipy.misc.imsave(vis_name, visim)
 
