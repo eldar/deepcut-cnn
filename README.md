@@ -19,7 +19,6 @@ $ pip install click
 ```
 - Set PYTHONPATH variable	
 ```
-$ cd <caffe_dir>
 $ export PYTHONPATH=`pwd`/python
 ```
 
