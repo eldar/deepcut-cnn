@@ -34,10 +34,10 @@ $ python ./pose_demo.py image.png --out_name=prediction
 
 ## Citing
 ```
-@article{insafutdinov2016deepercut,
+@inproceedings{insafutdinov2016deepercut,
 	author = {Eldar Insafutdinov and Leonid Pishchulin and Bjoern Andres and Mykhaylo Andriluka and Bernt Schieke},
 	title = {DeeperCut: A Deeper, Stronger, and Faster Multi-Person Pose Estimation Model},
-	journal = {arXiv},
+	booktitle = {European Conference on Computer Vision (ECCV)},
 	year = {2016},
 	url = {http://arxiv.org/abs/1605.03170}
     }
