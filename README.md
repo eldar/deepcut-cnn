@@ -4,7 +4,7 @@ This short documentation describes steps necessary to compile and run CNN-based 
 
 **Eldar Insafutdinov, Leonid Pishchulin, Bjoern Andres, Mykhaylo Andriluka, and Bernt Schiele   
 DeeperCut:  A Deeper, Stronger, and Faster Multi-Person Pose Estimation Model   
-arXiv:1605.03170, 2016**	
+In _European Conference on Computer Vision (ECCV)_, 2016**	
 For more information visit http://pose.mpi-inf.mpg.de
 
 ## Installation Instructions
