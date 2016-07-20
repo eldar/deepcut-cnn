@@ -10,13 +10,15 @@ For more information visit http://pose.mpi-inf.mpg.de
 ## Installation Instructions
 - This code was developed under Linux (Debian wheezy, 64 bit) and was tested only in this environment.
 - Build Caffe and Python bindings as described in the [official documentation](http://caffe.berkeleyvision.org/installation.html). You will have to disable CuDNN support and enable C++ 11.
+```
+$ make all pycaffe
+```
 - Install Python Click package (required for demo only)		
 ```
 $ pip install click
 ```
 - Set PYTHONPATH variable	
 ```
-$ cd <caffe_dir>
 $ export PYTHONPATH=`pwd`/python
 ```
 
