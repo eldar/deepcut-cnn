@@ -250,10 +250,6 @@ void SoftmaxWithLossVecLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& to
     Backward_cpu(top, propagate_down, bottom);
 }
 
-#ifdef CPU_ONLY
-STUB_GPU(SoftmaxWithLossVecLayer);
-#endif
-
 INSTANTIATE_CLASS(SoftmaxWithLossVecLayer);
 REGISTER_LAYER_CLASS(SoftmaxWithLossVec);
 
