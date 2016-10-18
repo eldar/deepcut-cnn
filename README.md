@@ -1,44 +1,53 @@
-# DeeperCut
+# DeeperCut Part Detectors
 
-Here you can find the implementation of the CNN-based human body part detectors,
-used in the [DeeperCut](http://arxiv.org/abs/1605.03170).
+This short documentation describes steps necessary to compile and run CNN-based body part detectors presented in the [DeeperCut paper](http://arxiv.org/abs/1605.03170):
 
-First of all, you should build Caffe and its Python bindings as described in the [official documentation](http://caffe.berkeleyvision.org/installation.html).
+**Eldar Insafutdinov, Leonid Pishchulin, Bjoern Andres, Mykhaylo Andriluka, and Bernt Schiele   
+DeeperCut:  A Deeper, Stronger, and Faster Multi-Person Pose Estimation Model   
+In _European Conference on Computer Vision (ECCV)_, 2016**	
+For more information visit http://pose.mpi-inf.mpg.de
 
-In order to run the demo of pose estimation execute the following:
-
+## Installation Instructions
+- This code was developed under Linux (Debian wheezy, 64 bit) and was tested only in this environment.
+- Build Caffe and Python bindings as described in the [official documentation](http://caffe.berkeleyvision.org/installation.html). You will have to disable CuDNN support and enable C++ 11.
 ```
-# you will need to install python's click package, ex. by executing
+$ make all pycaffe
+```
+- Install Python Click package (required for demo only)		
+```
 $ pip install click
 ```
-
+- Set PYTHONPATH variable	
 ```
-$ cd <caffe_dir>
 $ export PYTHONPATH=`pwd`/python
+```
 
-# Download Caffe model files
+## Download Caffe Models
+```
 $ cd models/deepercut
 $ ./download_models.sh
+```
 
-# Run demo of single person pose estimation
-$ cd ../../python/pose
+## Run Demo
+```
+$ cd python/pose
 $ python ./pose_demo.py image.png --out_name=prediction
 ```
 
-
-## Citation
-Please cite Deep(er)Cut in your publications if it helps your research:
-
-    @article{insafutdinov2016deepercut,
-        author = {Eldar Insafutdinov and Leonid Pishchulin and Bjoern Andres and Mykhaylo Andriluka and Bernt Schiele},
-        url = {http://arxiv.org/abs/1605.03170}
-        title = {DeeperCut: A Deeper, Stronger, and Faster Multi-Person Pose Estimation Model},
-        year = {2016}
+## Citing
+```
+@inproceedings{insafutdinov2016deepercut,
+	author = {Eldar Insafutdinov and Leonid Pishchulin and Bjoern Andres and Mykhaylo Andriluka and Bernt Schieke},
+	title = {DeeperCut: A Deeper, Stronger, and Faster Multi-Person Pose Estimation Model},
+	booktitle = {European Conference on Computer Vision (ECCV)},
+	year = {2016},
+	url = {http://arxiv.org/abs/1605.03170}
     }
-
-    @inproceedings{pishchulin16cvpr,
-	    title = {DeepCut: Joint Subset Partition and Labeling for Multi Person Pose Estimation},
-	    booktitle = {CVPR'16},
-	    url = {},
-	    author = {Leonid Pishchulin and Eldar Insafutdinov and Siyu Tang and Bjoern Andres and Mykhaylo Andriluka and Peter Gehler and Bernt Schiele}
-    }
+@inproceedings{pishchulin16cvpr,
+	author = {Leonid Pishchulin and Eldar Insafutdinov and Siyu Tang and Bjoern Andres and Mykhaylo Andriluka and Peter Gehler and Bernt Schiele},
+	title = {DeepCut: Joint Subset Partition and Labeling for Multi Person Pose Estimation},
+	booktitle = {IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
+	year = {2016},
+	url = {http://arxiv.org/abs/1511.06645}
+}
+```
