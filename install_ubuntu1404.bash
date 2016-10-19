@@ -1,5 +1,5 @@
 #!/bin/bash
-sudo apt install -y --allow-unauthenticated libgflags-dev libgoogle-glog-dev protobuf-compiler liblmdb-dev libleveldb-dev libsnappy-dev libatlas-dev libatlas-base-dev libhdf5-dev libopencv-dev libhdf5-serial-dev libboost-all-dev 
+sudo apt install -y --allow-unauthenticated libgflags-dev libgoogle-glog-dev protobuf-compiler liblmdb-dev libleveldb-dev libsnappy-dev libatlas-dev libatlas-base-dev libhdf5-dev libopencv-dev libhdf5-serial-dev libboost-all-dev python-scipy python-click python-skimage python-protobuf 
 
 cd models/deepercut
 bash download_models.sh &
