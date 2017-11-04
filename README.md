@@ -22,14 +22,20 @@ $ pip install click
 $ export PYTHONPATH=`pwd`/python
 ```
 
+
 ## Download Caffe Models
+
+ 
 ```
+$ git clone https://github.com/eldar/deepcut-cnn.git
+$ cd deepcut-cnn
 $ cd models/deepercut
 $ ./download_models.sh
 ```
 
 ## Run Demo
 ```
+$ cd ../../
 $ cd python/pose
 $ python ./pose_demo.py image.png --out_name=prediction
 ```
