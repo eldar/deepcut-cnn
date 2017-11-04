@@ -46,7 +46,7 @@ def array_to_blobproto(arr, diff=None):
     return blob
 
 
-def arraylist_to_blobprotovecor_str(arraylist):
+def arraylist_to_blobprotovector_str(arraylist):
     """Converts a list of arrays to a serialized blobprotovec, which could be
     then passed to a network for processing.
     """
@@ -63,7 +63,7 @@ def blobprotovector_str_to_arraylist(str):
     return [blobproto_to_array(blob) for blob in vec.blobs]
 
 
-def array_to_datum(arr, label=0):
+def array_to_datum(arr, label=None):
     """Converts a 3-dimensional array to datum. If the array has dtype uint8,
     the output data will be encoded as a string. Otherwise, the output data
     will be stored in float format.
@@ -75,8 +75,9 @@ def array_to_datum(arr, label=0):
     if arr.dtype == np.uint8:
         datum.data = arr.tostring()
     else:
-        datum.float_data.extend(arr.flat)
-    datum.label = label
+        datum.float_data.extend(arr.astype(float).flat)
+    if label is not None:
+        datum.label = label
     return datum
 
 
@@ -322,7 +323,7 @@ def resize_image(im, new_dims, interp_order=1):
             # skimage is fast but only understands {1,3} channel images
             # in [0, 1].
             im_std = (im - im_min) / (im_max - im_min)
-            resized_std = resize(im_std, new_dims, order=interp_order)
+            resized_std = resize(im_std, new_dims, order=interp_order, mode='constant')
             resized_im = resized_std * (im_max - im_min) + im_min
         else:
             # the image is a constant -- avoid divide by 0
